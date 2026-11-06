@@ -2,11 +2,20 @@
 // USB serial 115200 bps. Each message uses a two-line frame.
 // The CLASS payload is kept exactly as received (including case and spaces).
 // Copy this entire file into https://makecode.microbit.org/ > JavaScript.
+// External passive piezo buzzer: + to P0, - to GND (no external supply).
+// STATUS:BUZZER is sent only after 60 continuous seconds by the web app.
 
 let pendingFrame = ""
 let pendingAt = 0
 let lastClass = ""
 let goodClass = "Class 1"
+let buzzerActive = false
+let lastBuzzerAt = 0
+
+function stopBuzzer() {
+    buzzerActive = false
+    pins.analogPitch(0, 0)
+}
 
 function showWaiting() {
     basic.showLeds(`
@@ -51,6 +60,8 @@ function showChecking() {
 serial.redirectToUSB()
 serial.setBaudRate(BaudRate.BaudRate115200)
 serial.setRxBufferSize(128)
+pins.analogSetPitchPin(AnalogPin.P0)
+stopBuzzer()
 showWaiting()
 
 serial.onDataReceived(serial.delimiters(Delimiters.NewLine), function () {
@@ -79,12 +90,20 @@ serial.onDataReceived(serial.delimiters(Delimiters.NewLine), function () {
             serial.writeString("ACK:GOODCLASS:" + goodClass + "\n")
         } else if (type == "STATUS") {
             if (line == "STATUS:GOOD") {
+                stopBuzzer()
                 showGood()
+            } else if (line == "STATUS:BUZZER") {
+                buzzerActive = true
+                lastBuzzerAt = input.runningTime()
+                showWarning()
             } else if (line == "STATUS:WARNING") {
+                stopBuzzer()
                 showWarning()
             } else if (line == "STATUS:CHECK") {
+                stopBuzzer()
                 showChecking()
             } else if (line == "STATUS:UNKNOWN") {
+                stopBuzzer()
                 showWaiting()
             } else {
                 serial.writeString("ERROR:UNKNOWN_STATUS\n")
@@ -109,6 +128,17 @@ serial.onDataReceived(serial.delimiters(Delimiters.NewLine), function () {
 })
 
 basic.forever(function () {
+    let now = input.runningTime()
+    // No heartbeat for 3 seconds: browser closed, USB lost, or inference stalled.
+    if (buzzerActive && now - lastBuzzerAt >= 3000) {
+        stopBuzzer()
+        showWaiting()
+    }
+    if (buzzerActive) {
+        // A passive buzzer needs a waveform. Alternate 200 ms tone and silence.
+        // Duration 0 is nonblocking so serial stop commands stay responsive.
+        pins.analogPitch(Math.idiv(now, 200) % 2 == 0 ? 2000 : 0, 0)
+    }
     if (pendingFrame != "" && input.runningTime() - pendingAt > 2000) {
         pendingFrame = ""
         serial.writeString("ERROR:FRAME_TIMEOUT\n")

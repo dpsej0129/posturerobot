@@ -22,6 +22,12 @@ const context={console,TextEncoder,TextDecoder,URL,Date:FakeDate,performance:{no
 context.window.window=context.window;
 source=source.replace(/\ninit\(\);\n/,'\nwindow.testApi={\n initialize(){settings={...DEFAULTS};records=[];unsaved=[];loadProblem=false;storageBlocked=false;running=true;paused=false;session=createSession();current="unknown";candidate="unknown";candidateAt=0;lastPerf=performance.now();lastWall=Date.now();lastSampleAt=lastPerf;alertLatched=false;lowSince=null;history=[];},\n sample(state){accrue();lastSampleAt=performance.now();history=[{},{},{}];setCandidate(state,performance.now());checkAlert(performance.now());},\n accrue,resetJudgement,snapshot,mergeSave,checkAlert,\n read(){return {current,lowSince,alertLatched,session,records,unsaved};},\n pause(value){paused=value;},settings(value){Object.assign(settings,value);},\n recover(){return restoreInterrupted();}\n};\n');
 source=source.replace('accrue,resetJudgement,snapshot,mergeSave,checkAlert,','accrue,resetJudgement,snapshot,mergeSave,checkAlert,renderAll,renderStats,load(){records=loadRecords();},');
+source=source.replace('recover(){return restoreInterrupted();}',`recover(){return restoreInterrupted();},
+ device(write){port={};writer={write};serialQueue=Promise.resolve();serialEpoch++;lastFrame='';lastSend=0;lastDeviceSignature='';lastBuzzerHeartbeat=0;},
+ async sync(waiting=false){syncDevice(waiting);await serialQueue;},
+ renderLive,pauseCamera,stopCamera,
+ classLabel(label){stableClass=label;},
+`);
 vm.createContext(context);vm.runInContext(source,context);
 const C=context.window.PostureCore,T=context.window.testApi;
 let checks=0;
@@ -50,16 +56,48 @@ test('Repeated saving is idempotent; quota failure retains the session for backu
 
 // Execute the actual MakeCode source against minimal micro:bit API stubs.
 const firmware=fs.readFileSync(path.join(__dirname,'../microbit-makecode.js'),'utf8');
-let callback,forever,rx='',led='',outputs=[],deviceTime=0;
-const board={serial:{redirectToUSB(){},setBaudRate(n){assert.equal(n,115200)},setRxBufferSize(n){assert.equal(n,128)},delimiters:()=> '\n',onDataReceived(d,fn){callback=fn},readUntil:()=>rx,writeString:s=>outputs.push(s)},BaudRate:{BaudRate115200:115200},Delimiters:{NewLine:1},basic:{showLeds:s=>led=s.replace(/\s/g,''),forever:fn=>forever=fn,pause(){}},input:{runningTime:()=>deviceTime}};
+let callback,forever,rx='',led='',outputs=[],deviceTime=0,tone=0;
+const board={serial:{redirectToUSB(){},setBaudRate(n){assert.equal(n,115200)},setRxBufferSize(n){assert.equal(n,128)},delimiters:()=> '\n',onDataReceived(d,fn){callback=fn},readUntil:()=>rx,writeString:s=>outputs.push(s)},BaudRate:{BaudRate115200:115200},Delimiters:{NewLine:1},basic:{showLeds:s=>led=s.replace(/\s/g,''),forever:fn=>forever=fn,pause(){}},input:{runningTime:()=>deviceTime},AnalogPin:{P0:0},pins:{analogSetPitchPin:pin=>assert.equal(pin,0),analogPitch(hz,ms){assert.equal(ms,0);tone=hz;}},Math:{idiv:(a,b)=>Math.trunc(a/b)}};
 vm.createContext(board);vm.runInContext(firmware,board);
 const send=(kind,payload)=>{for(const line of C.frame(kind,payload).split('\n').slice(0,-1)){rx=line;callback();}};
 test('MakeCode receives exact labels and status controls drive the three LED states',()=>{send('CLASS','Class 1');const good=led;assert(outputs.at(-1).includes('ACK:CLASS:Class 1'));send('STATUS','STATUS:WARNING');const warning=led;send('STATUS','STATUS:UNKNOWN');const unknown=led;assert.notEqual(good,warning);assert.notEqual(warning,unknown);send('STATUS','STATUS:GOOD');assert.equal(led,good);});
 test('A control-looking class cannot trigger a control LED',()=>{send('CLASS','STATUS:WARNING');assert.equal(outputs.at(-1),'ACK:CLASS:STATUS:WARNING\n');const classLed=led;send('STATUS','STATUS:WARNING');assert.notEqual(led,classLed);});
 test('Changing the good-class mapping preserves the original Korean label',()=>{send('GOODCLASS','좋은 자세');send('CLASS','좋은 자세');assert.equal(outputs.at(-1),'ACK:CLASS:좋은 자세\n');send('CLASS','FRAME:STATUS');assert.equal(outputs.at(-1),'ACK:CLASS:FRAME:STATUS\n');});
 test('Incomplete serial frames time out safely',()=>{rx='FRAME:CLASS';callback();deviceTime=2500;forever();assert.equal(outputs.at(-1),'ERROR:FRAME_TIMEOUT\n');rx='unframed';callback();assert.equal(outputs.at(-1),'ERROR:EXPECTED_FRAME\n');});
+test('Passive buzzer alternates tone and silence, and ordinary warnings stay silent',()=>{send('STATUS','STATUS:WARNING');forever();assert.equal(tone,0);deviceTime=4000;send('STATUS','STATUS:BUZZER');forever();assert.equal(tone,2000);deviceTime+=200;forever();assert.equal(tone,0);deviceTime+=200;forever();assert.equal(tone,2000);});
+test('Good, unknown and check status immediately silence the passive buzzer',()=>{for(const state of ['GOOD','UNKNOWN','CHECK','WARNING']){deviceTime=8000;send('STATUS','STATUS:BUZZER');forever();assert.equal(tone,2000);send('STATUS','STATUS:'+state);assert.equal(tone,0);}});
+test('Class payloads cannot activate a buzzer and its watchdog requires buzzer heartbeats',()=>{send('CLASS','STATUS:BUZZER');forever();assert.equal(tone,0);deviceTime=10000;send('STATUS','STATUS:BUZZER');forever();assert.equal(tone,2000);deviceTime+=2800;send('STATUS','STATUS:BUZZER');forever();assert.equal(tone,2000);deviceTime+=3000;send('CLASS','Class 1');forever();assert.equal(tone,0);});
 test('SVG charts and comparison render real aggregates without seeding example records',()=>{T.initialize();const a=record('chart-a',70000,30000,10000),b=record('chart-b',80000,20000,5000,'2026-11-03T02:00:00.000Z');storage.set('bareungyeol.records.v1',JSON.stringify([a,b]));T.load();T.renderAll();T.renderStats(C.dailyRows([a,b]));assert(nodes.get('dash-chart').innerHTML.includes('<svg'));assert(nodes.get('dash-chart').innerHTML.includes('75.0%'));assert(nodes.get('comparison').innerHTML.includes('+10.0%p'));assert(nodes.get('stats-data-table').innerHTML.includes('3분 35초'));assert.equal(T.read().records.length,2);});
 (async()=>{
+ // Exercise real web serial encoding against the actual MakeCode receiver.
+ // Timer waits are fast-forwarded; inference and wall clocks still advance explicitly.
+ context.setTimeout=fn=>{queueMicrotask(fn);return 0;};
+ let frames=[];
+ const attach=()=>{frames=[];T.device(bytes=>{const text=new TextDecoder().decode(bytes);frames.push(text);deviceTime=perf;for(const line of text.split('\n').slice(0,-1)){rx=line;callback();}forever();});};
+ const measure=async ms=>{while(ms>0){const step=Math.min(ms,1000);forward(step);T.sample('check');await T.sync();ms-=step;}};
+ const start=async()=>{T.initialize();attach();T.sample('check');forward(900);T.sample('check');await T.sync();};
+ await start();await measure(59999);
+ test('A connected passive buzzer stays silent before 60 seconds despite the 10-second screen alert',()=>{assert.equal(T.read().session.alerts,1);assert(!frames.some(f=>f.includes('STATUS:BUZZER')));assert.equal(tone,0);});
+ T.classLabel('다른 자세');await measure(1);
+ test('Exactly 60 continuous seconds sends a real frame that starts the passive buzzer',()=>{assert(frames.at(-1).includes('FRAME:STATUS\nSTATUS:BUZZER\n'));assert.equal(led,'..#....#....#.........#..');deviceTime+=200-(deviceTime%200);if(Math.trunc(deviceTime/200)%2)deviceTime+=200;forever();assert.equal(tone,2000);});
+ const before=frames.length;await measure(4000);
+ test('Ongoing posture sends repeated one-second buzzer heartbeats',()=>{assert.equal(frames.slice(before).filter(f=>f.includes('STATUS:BUZZER')).length,4);});
+ T.settings({alerts:false});await T.sync();
+ test('Turning alerts off silences an already ringing device',()=>assert.equal(tone,0));
+ T.settings({alerts:true});await T.sync();await T.pauseCamera();await T.sync(true);
+ test('Pausing silences the connected buzzer',()=>{assert(frames.at(-1).includes('STATUS:UNKNOWN'));assert.equal(tone,0);});
+ await start();T.settings({alertDelay:120});await measure(60000);
+ test('The fixed one-minute buzzer is independent of a longer saved screen alert delay',()=>{assert.equal(T.read().session.alerts,0);assert(frames.at(-1).includes('STATUS:BUZZER'));});
+ T.sample('good');await T.sync();
+ test('Posture recovery stops the tone as soon as the check interval ends',()=>{assert.equal(tone,0);assert.equal(T.read().lowSince,null);});
+ await start();await measure(59000);T.sample('unknown');await T.sync();await measure(2000);
+ test('Missing posture breaks the minute instead of combining separate intervals',()=>{assert(!frames.some(f=>f.includes('STATUS:BUZZER')));assert.equal(tone,0);});
+ await measure(60000);forward(2000);T.accrue();await T.sync();
+ test('Stalled inference stops buzzer refreshes and resets the continuous timer',()=>{assert.equal(T.read().current,'unknown');assert.equal(T.read().lowSince,null);assert.equal(tone,0);assert(frames.at(-1).includes('STATUS:UNKNOWN'));});
+ await start();await measure(60000);T.settings({microbit:false});T.renderLive();
+ test('Device settings describe the buzzer as off',()=>assert(nodes.get('buzzer-status').textContent.includes('꺼짐')));
+ T.settings({microbit:true});await T.stopCamera();await T.sync(true);
+ test('An ended measurement sends a waiting state rather than a buzzer heartbeat',()=>{assert(frames.at(-1).includes('STATUS:UNKNOWN'));assert.equal(tone,0);});
  context.navigator.locks={request:async(name,options,callback)=>callback({name})};
  T.initialize();const complete=record('recovery',10000,2000,0),checkpoint=record('recovery',3000,1000,0);storage.set('bareungyeol.records.v1',JSON.stringify([complete]));storage.set('bareungyeol.active.v1',JSON.stringify(checkpoint));T.load();await T.recover();test('An older checkpoint cannot truncate an already saved completed session',()=>{assert.equal(T.read().records[0].totalMs,12000);assert.equal(storage.has('bareungyeol.active.v1'),false);});
  T.initialize();storage.set('bareungyeol.records.v1','[]');storage.set('bareungyeol.active.v1',JSON.stringify(checkpoint));T.load();await T.recover();test('Interrupted measurements restore only checkpoint duration and remain idempotent',()=>{assert.equal(T.read().records.length,1);assert.equal(T.read().records[0].totalMs,4000);assert.equal(T.read().records[0].recovered,true);assert.equal(storage.has('bareungyeol.active.v1'),false);});

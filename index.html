@@ -114,17 +114,17 @@ body.dark{--bg:#111c2c;--panel:#1b293c;--ink:#e1e9f7;--muted:#9bacc4;--line:#2c3
   <input id="photo-file" type="file" accept="image/jpeg,image/png,image/webp" hidden>
   <div class="field"><label for="photo-date">기록할 날짜</label><input type="date" id="photo-date" required></div>
   <div class="field"><label for="photo-note">오늘의 메모 <span class="muted" style="font-weight:400">선택</span></label><textarea id="photo-note" rows="2" maxlength="500" placeholder="예: 공부를 시작하기 전, 책상 높이를 조절했어요."></textarea></div>
-  <div class="setting-line"><div><label for="photo-mirror">분석할 때 좌우 반전</label><p>학습할 때의 카메라 방향에 맞추세요. 저장 사진 자체는 바꾸지 않습니다.</p></div><input class="switch" type="checkbox" id="photo-mirror"></div>
+  <div class="setting-line"><div><label for="photo-mirror">분석할 때 좌우 반전</label><p>학습할 때의 방향에 맞추세요. 정면에서 얼굴·양쪽 어깨·팔 또는 허리가 보이게 촬영하세요.</p></div><input class="switch" type="checkbox" id="photo-mirror"></div>
   <div class="actions" style="margin-top:18px"><button class="btn primary" id="photo-analyze" disabled>사진 피드백 받기</button><button class="btn" id="photo-save" disabled>날짜별 기록에 저장</button></div><p class="muted small" id="photo-analysis-state" style="margin-top:12px">사진을 선택하면 피드백을 받을 수 있어요.</p>
  </article>
- <article class="card card-pad photo-feedback-card"><div class="card-head"><h2>사진 자세 피드백</h2><button class="btn link tiny" data-page="guide">자세 가이드 →</button></div><div id="photo-feedback"><div class="empty-panel"><svg class="icon"><use href="#i-person"/></svg><strong>나의 자세를 가볍게 돌아보세요</strong><p>사진을 분석하면 AI 분류와 촬영 상태에 따른<br>확인할 점을 안내합니다.</p></div></div></article>
+ <article class="card card-pad photo-feedback-card"><div class="card-head"><h2>사진 자세 피드백</h2><button class="btn link tiny" data-page="guide">자세 가이드 →</button></div><div id="photo-feedback"><div class="empty-panel"><svg class="icon"><use href="#i-person"/></svg><strong>나의 자세를 가볍게 돌아보세요</strong><p>좋은 자세 클래스를 설정하고 정면 상체 사진을 분석하세요.<br>점수가 애매하거나 사진 정보와 충돌하면 판정을 보류합니다.</p></div></div></article>
  </div>
  <article class="card card-pad" style="margin-top:24px"><div class="card-head"><div><h2>매일 쌓이는 나의 사진</h2><p id="photo-history-summary">저장된 사진을 불러오는 중입니다.</p></div><div class="actions"><button class="btn tiny" id="photo-backup">사진 기록 백업</button><button class="btn tiny" id="photo-restore">백업 복원</button></div></div>
   <div class="table-controls"><div class="filter"><label for="photo-filter-date">날짜 선택</label><input id="photo-filter-date" type="date"><button class="btn tiny" id="photo-clear-filter">전체 보기</button></div><button class="btn tiny danger" id="photo-delete-all">사진 기록 전체 삭제</button></div><input type="file" id="photo-backup-file" accept="application/json,.json" hidden>
   <div id="photo-history" class="photo-history"></div><button id="photo-more" class="btn" style="margin:18px auto 0;display:flex" hidden>기록 더 보기</button>
  </article>
 </section>
-<dialog id="photo-detail-dialog"><h2>사진 자세 기록</h2><img id="photo-detail-image" class="photo-detail-image" alt="저장한 자세 사진"><p id="photo-detail-date" style="margin-top:12px"></p><p id="photo-detail-note" class="photo-note"></p><div id="photo-detail-feedback"></div><div class="actions"><button class="btn" id="photo-download">사진 내려받기</button><button class="btn primary" id="photo-detail-close">닫기</button></div></dialog>
+<dialog id="photo-detail-dialog"><h2>사진 자세 기록</h2><img id="photo-detail-image" class="photo-detail-image" alt="저장한 자세 사진"><p id="photo-detail-date" style="margin-top:12px"></p><p id="photo-detail-note" class="photo-note"></p><div id="photo-detail-feedback"></div><div class="actions"><button class="btn" id="photo-reanalyze">이 사진 다시 분석</button><button class="btn" id="photo-download">사진 내려받기</button><button class="btn primary" id="photo-detail-close">닫기</button></div></dialog>
 
 <section id="page-guide" class="page" aria-labelledby="guide-title">
  <div class="page-head"><div><h1 id="guide-title" tabindex="-1">내 몸에 맞게, 편안하게</h1><p>한 자세를 고정하기보다 작업 환경을 조절하고 자주 움직여 주세요.</p></div><span class="badge">공공 보건·안전 기관 자료</span></div>
@@ -140,7 +140,7 @@ body.dark{--bg:#111c2c;--panel:#1b293c;--ink:#e1e9f7;--muted:#9bacc4;--line:#2c3
 <section id="page-settings" class="page" aria-labelledby="settings-title">
  <div class="page-head"><div><h1 id="settings-title" tabindex="-1">나에게 맞는 측정 환경</h1><p>변경한 설정은 이 브라우저에 자동으로 저장됩니다.</p></div><span class="badge" id="settings-saved">자동 저장</span></div>
  <div class="settings-grid"><div class="stack">
- <article class="card settings-card"><h2>AI 모델</h2><div class="field"><label for="model-url">Teachable Machine 포즈 모델 URL</label><input type="url" id="model-url" spellcheck="false" value="https://teachablemachine.withgoogle.com/models/jXNqYPxoH/"><p>공개 HTTPS 포즈 모델의 폴더 URL을 입력해 주세요.</p></div><div class="actions" style="margin-bottom:18px"><button class="btn primary" id="load-model">모델 불러오기</button><button class="btn" id="reset-model-url">기본 URL</button><span id="model-load-state" class="muted small">불러오기 전</span></div><div class="field"><label for="good-class">좋은 자세로 사용할 클래스</label><select id="good-class" disabled><option value="">먼저 모델을 불러오세요</option></select><p>모델을 불러온 뒤 좋은 자세로 학습한 실제 클래스를 선택해 주세요. 클래스 이름은 원문 그대로 사용합니다.</p></div><div id="model-class-info" class="notice" style="font-size:11px">실제 모델의 모든 클래스를 자동으로 읽습니다.</div><div class="field"><label for="threshold">좋은 자세 인식 기준 <output id="threshold-output">80%</output></label><input type="range" id="threshold" min="50" max="99" step="1" value="80"><p>최근 최대 5프레임을 평균하고, 같은 상태가 0.8초 이상 유지되어야 확정합니다.</p></div></article>
+ <article class="card settings-card"><h2>AI 모델</h2><div class="field"><label for="model-url">Teachable Machine 포즈 모델 URL</label><input type="url" id="model-url" spellcheck="false" value="https://teachablemachine.withgoogle.com/models/jXNqYPxoH/"><p>공개 HTTPS 포즈 모델의 폴더 URL을 입력해 주세요.</p></div><div class="actions" style="margin-bottom:18px"><button class="btn primary" id="load-model">모델 불러오기</button><button class="btn" id="reset-model-url">기본 URL</button><span id="model-load-state" class="muted small">불러오기 전</span></div><div class="field"><label for="good-class">좋은 자세로 사용할 클래스</label><select id="good-class" disabled><option value="">먼저 모델을 불러오세요</option></select><p>모델에서 실제로 좋은 자세를 학습시킨 클래스를 직접 선택해 주세요. 잘못 선택하면 나쁜 자세를 좋게 표시할 수 있습니다. 클래스 이름은 자동으로 추측하지 않습니다.</p></div><div id="model-class-info" class="notice" style="font-size:11px">실제 모델의 모든 클래스를 자동으로 읽습니다.</div><div class="field"><label for="threshold">좋은 자세 인식 기준 <output id="threshold-output">80%</output></label><input type="range" id="threshold" min="50" max="99" step="1" value="80"><p>최근 최대 5프레임을 평균하고, 같은 상태가 0.8초 이상 유지되어야 확정합니다.</p></div></article>
  <article class="card settings-card"><h2>카메라와 화면</h2><div class="field"><label for="camera-select">카메라 선택</label><select id="camera-select"><option value="">기본 카메라</option></select><p>권한을 허용하면 장치 이름을 확인할 수 있어요. 측정 중에는 변경할 수 없습니다.</p></div><button class="btn tiny" id="refresh-cameras">카메라 목록 새로고침</button><div class="setting-line"><div><label for="mirror">좌우 반전</label><p>Teachable Machine의 기본 학습 화면과 맞춥니다.</p></div><input class="switch" id="mirror" type="checkbox" checked></div><div class="setting-line"><div><label for="theme">화면 테마</label></div><select id="theme" style="max-width:140px"><option value="light">라이트</option><option value="dark">다크</option><option value="system">시스템 설정</option></select></div></article>
  <article class="card settings-card"><h2>기록 관리</h2><div class="field"><label for="retention">기록 보관 기간</label><select id="retention"><option value="0">계속 보관</option><option value="30">최근 30일</option><option value="90">최근 90일</option><option value="365">최근 1년</option></select><p>기간을 바꾸면 삭제 대상을 먼저 확인합니다. 브라우저 데이터 삭제 시 기록도 사라집니다.</p></div><div class="actions"><button class="btn" data-action="backup">실시간 JSON 백업</button><button class="btn" id="restore-backup">백업 복원</button><button class="btn danger" id="delete-all">실시간 기록 삭제</button></div><input type="file" id="backup-file" accept="application/json,.json" hidden><div class="notice error" id="pending-save" style="margin-top:15px" hidden>저장하지 못한 측정이 있습니다. JSON 백업으로 먼저 보관하거나 저장을 다시 시도하세요.<div class="actions" style="margin-top:8px"><button class="btn tiny" id="retry-save">저장 다시 시도</button></div></div></article>
  </div><div class="stack">
@@ -161,8 +161,9 @@ body.dark{--bg:#111c2c;--panel:#1b293c;--ink:#e1e9f7;--muted:#9bacc4;--line:#2c3
 const DEFAULT_URL = 'https://teachablemachine.withgoogle.com/models/jXNqYPxoH/';
 const BUZZER_DELAY_MS = 60000;
 const BUZZER_HEARTBEAT_MS = 1000;
+const PHOTO_LIMITS=Object.freeze({fileBytes:15*1024*1024,pixels:40000000,headerBytes:256*1024,backupBytes:100*1024*1024,backupItems:1000,restoreBytes:32*1024*1024});
 const KEYS = { settings:'bareungyeol.settings.v1', records:'bareungyeol.records.v1', active:'bareungyeol.active.v1' };
-const DEFAULTS = { modelUrl:DEFAULT_URL, goodClass:'Class 1', threshold:80, alertDelay:10, alerts:true, sound:false, microbit:true, cameraId:'', theme:'light', mirror:true, retention:0 };
+const DEFAULTS = { modelUrl:DEFAULT_URL, goodClass:'', goodClassConfirmed:false, threshold:80, alertDelay:10, alerts:true, sound:false, microbit:true, cameraId:'', theme:'light', mirror:true, retention:0 };
 const $ = id => document.getElementById(id);
 const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const finite = n => Number.isFinite(n) && n >= 0;
@@ -232,7 +233,7 @@ function readJSON(key,fallback){try{const raw=localStorage.getItem(key);return r
 function writeJSON(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true;}catch(error){showStorageError('설정 또는 기록을 저장하지 못했습니다. 저장 공간과 브라우저 권한을 확인해 주세요.');return false;}}
 function loadRecords(){const data=readJSON(KEYS.records,[]);if(!Array.isArray(data)||!data.every(validRecord)){loadProblem=true;showStorageError('기록 형식을 확인할 수 없어 원본을 보존했습니다.');return [];}return data;}
 function persistSettings(){if(loadProblem)return;$('settings-saved').textContent=writeJSON(KEYS.settings,settings)?'저장됨':'저장 실패';}
-function normalizeSettings(raw){const s={...DEFAULTS};if(!raw||typeof raw!=='object')return s;for(const key of ['alerts','sound','microbit','mirror'])if(typeof raw[key]==='boolean')s[key]=raw[key];for(const key of ['modelUrl','goodClass','cameraId'])if(typeof raw[key]==='string')s[key]=raw[key];if(s.modelUrl==='https://teachablemachine.withgoogle.com/models/HU67qJ2Mw/'){s.modelUrl=DEFAULT_URL;s.goodClass='';}s.threshold=clamp(Number(raw.threshold)||80,50,99);s.alertDelay=clamp(Number(raw.alertDelay)||10,2,300);if(['light','dark','system'].includes(raw.theme))s.theme=raw.theme;if([0,30,90,365].includes(raw.retention))s.retention=raw.retention;return s;}
+function normalizeSettings(raw){const s={...DEFAULTS};if(!raw||typeof raw!=='object')return s;for(const key of ['alerts','sound','microbit','mirror'])if(typeof raw[key]==='boolean')s[key]=raw[key];for(const key of ['modelUrl','goodClass','cameraId'])if(typeof raw[key]==='string')s[key]=raw[key];if(s.modelUrl==='https://teachablemachine.withgoogle.com/models/HU67qJ2Mw/'){s.modelUrl=DEFAULT_URL;s.goodClass='';}s.goodClassConfirmed=raw.goodClassConfirmed===true&&!!s.goodClass;if(!s.goodClassConfirmed)s.goodClass='';s.threshold=clamp(Number(raw.threshold)||80,50,99);s.alertDelay=clamp(Number(raw.alertDelay)||10,2,300);if(['light','dark','system'].includes(raw.theme))s.theme=raw.theme;if([0,30,90,365].includes(raw.retention))s.retention=raw.retention;return s;}
 function applyTheme(){const dark=settings.theme==='dark'||settings.theme==='system'&&matchMedia('(prefers-color-scheme: dark)').matches;document.body.classList.toggle('dark',dark);}
 function showPage(page,focus=true){if(!document.getElementById('page-'+page))return;if(page!=='photos'&&photoState.stream)stopPhotoCamera();view=page;document.querySelectorAll('.page').forEach(el=>el.classList.toggle('active',el.id==='page-'+page));document.querySelectorAll('.nav [data-page]').forEach(el=>{if(el.dataset.page===page)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});if(location.hash!=='#'+page)historyReplace(page);renderAll();if(focus)$(`${page}-title`).focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
 function historyReplace(page){window.history.replaceState(null,'','#'+page);}
@@ -301,7 +302,7 @@ async function loadModel(){
  if(running)return model;if(modelPromise)return modelPromise;const requestedURL=$('model-url').value.trim();
  modelPromise=(async()=>{modelBusy=true;$('model-load-state').textContent='포즈 모델 다운로드 중…';renderSettings();let next=null;
  try{const url=normalizeURL(requestedURL);await ensureLibraries();next=await tmPose.load(url+'model.json',url+'metadata.json');const found=next.getClassLabels();if(!Array.isArray(found)||!found.length||found.some(s=>typeof s!=='string'||!s)||new Set(found).size!==found.length||found.length!==next.getTotalClasses())throw new Error('모델 클래스 메타데이터가 올바르지 않습니다. 포즈 모델을 다시 내보내 주세요.');
- const old=model;model=next;next=null;disposeModel(old);labels=[...found];if(url!==settings.modelUrl){settings.goodClass=url===DEFAULT_URL&&labels.includes('Class 1')?'Class 1':'';}else if(!labels.includes(settings.goodClass))settings.goodClass='';settings.modelUrl=url;persistSettings();renderClasses();$('model-load-state').textContent=`불러옴 · ${labels.length}개 클래스`;$('manual-message').value=settings.goodClass||labels[0];toast('실제 포즈 모델의 클래스 정보를 불러왔습니다.');return model;
+ const old=model;model=next;next=null;disposeModel(old);labels=[...found];if(url!==settings.modelUrl){settings.goodClass='';settings.goodClassConfirmed=false;}else if(!labels.includes(settings.goodClass)){settings.goodClass='';settings.goodClassConfirmed=false;}settings.modelUrl=url;persistSettings();renderClasses();$('model-load-state').textContent=`불러옴 · ${labels.length}개 클래스`;$('manual-message').value=settings.goodClass||labels[0];toast('실제 포즈 모델의 클래스 정보를 불러왔습니다.');return model;
  }catch(error){disposeModel(next);$('model-load-state').textContent='불러오기 실패';$('model-notice').textContent='모델 불러오기 실패: '+error.message;$('model-notice').className='notice error';toast('모델을 불러오지 못했습니다. URL, 인터넷 연결, 포즈 모델 여부를 확인해 주세요.');throw error;
  }finally{modelBusy=false;modelPromise=null;renderSettings();}})();return modelPromise;
 }
@@ -411,7 +412,7 @@ document.addEventListener('click',event=>{
 $('start-camera').addEventListener('click',startCamera);$('pause-camera').addEventListener('click',()=>paused?resumeCamera():pauseCamera());$('stop-camera').addEventListener('click',stopCamera);
 $('load-model').addEventListener('click',()=>loadModel().catch(()=>{}));$('reset-model-url').addEventListener('click',()=>{$('model-url').value=DEFAULT_URL;loadModel().catch(()=>{});});
 $('model-url').addEventListener('change',()=>{try{normalizeURL($('model-url').value.trim());}catch(error){toast(error.message);}});
-$('good-class').addEventListener('change',()=>{settings.goodClass=$('good-class').value;persistSettings();renderClasses();});
+$('good-class').addEventListener('change',()=>{settings.goodClass=$('good-class').value;settings.goodClassConfirmed=!!settings.goodClass;persistSettings();renderClasses();});
 $('threshold').addEventListener('input',()=>{$('threshold-output').textContent=$('threshold').value+'%';});$('threshold').addEventListener('change',()=>{settings.threshold=+$('threshold').value;persistSettings();});
 $('alert-delay').addEventListener('input',()=>{const value=Number($('alert-delay').value);if(Number.isInteger(value)&&value>=2&&value<=300){settings.alertDelay=value;persistSettings();renderLive();}});
 $('alert-delay').addEventListener('change',()=>{settings.alertDelay=clamp(Math.round(+$('alert-delay').value||10),2,300);$('alert-delay').value=settings.alertDelay;persistSettings();renderLive();});
@@ -444,38 +445,49 @@ function photoObservations(pose) {
  const headOffset=nose?Math.abs(nose.position.x-(left.position.x+right.position.x)/2)/width:null;
  return {shoulderAngle,headOffset};
 }
+function qualifyPhotoPose(pose,size=400){
+ if(!qualifyPose(pose,size)||pose.score<.4)return false;
+ const point=part=>pose.keypoints.find(k=>k.part===part&&k.score>=.7&&Number.isFinite(k.position?.x)&&Number.isFinite(k.position?.y)&&k.position.x>size*.02&&k.position.x<size*.98&&k.position.y>size*.02&&k.position.y<size*.98);
+ const left=point('leftShoulder'),right=point('rightShoulder');
+ return !!(left&&right&&point('nose')&&point('leftEye')&&point('rightEye')&&Math.abs(left.position.x-right.position.x)>=size*.2);
+}
 function photoFeedback({poseOK,predictions,classes,goodClass,threshold,observations}) {
  const tips=[];
- let state='unknown',title='상체가 잘 보이는 사진이 필요해요',description='사람의 상체를 충분히 확인할 수 없어 자세 판정을 보류했습니다.';
- const good=predictions.find(p=>p.className===goodClass)?.probability;
- let limitation='';
- if(!poseOK){tips.push({title:'촬영 범위를 넓혀 주세요',text:'머리와 양쪽 어깨, 팔이나 허리가 프레임 안에 보이도록 다시 찍어 주세요.'});}
+ let state='unknown',title='사진 자세 판정을 보류했어요',description='상체와 얼굴이 잘 보이는 정면 사진으로 다시 확인해 주세요.';
+ const valid=classes.length>=2&&predictions.length===classes.length&&new Set(predictions.map(p=>p.className)).size===classes.length&&predictions.every(p=>classes.includes(p.className)&&Number.isFinite(p.probability)&&p.probability>=0&&p.probability<=1)&&Math.abs(predictions.reduce((sum,p)=>sum+p.probability,0)-1)<=.02;
+ const ordered=valid?[...predictions].sort((a,b)=>b.probability-a.probability):[];
+ const top=ordered[0],minimum=Math.max(.9,threshold/100);
+ const clear=!!(top&&top.probability>=minimum);
+ let limitation='분류 점수는 실제 자세의 정확도나 건강 상태를 뜻하지 않습니다. 정면 사진에서 확인 가능한 정보만 사용합니다.';
+ if(!poseOK){tips.push({title:'촬영 상태를 확인해 주세요',text:'정면에서 눈·코·양쪽 어깨와 팔 또는 허리가 선명하게 보이도록 가까이 촬영해 주세요. 측면·가림·작은 인물은 판정을 보류합니다.'});}
  else {
-  if(classes.length<2){title='사진에서 확인할 점을 살펴보세요';description='상체는 인식했지만, 모델의 클래스가 1개여서 AI 자세 분류는 보류했습니다.';limitation='좋은 자세와 비교용 자세 등 두 개 이상의 클래스를 학습한 모델이 필요합니다.';}
-  else if(!goodClass||!Number.isFinite(good)){title='좋은 자세 기준을 먼저 골라 주세요';description='상체를 인식했습니다. 설정에서 좋은 자세에 해당하는 실제 클래스를 지정하면 분류 피드백도 받을 수 있습니다.';limitation='아래 내용은 사진의 화면상 정렬을 확인하기 위한 참고 안내입니다.';}
-  else if(good>=threshold/100){state='good';title='좋은 자세 클래스와 유사해요';description=`사진 한 장에서 선택한 좋은 자세 클래스의 점수가 기준 ${threshold}% 이상입니다. 편안함을 확인하고 가끔 자세를 바꿔 주세요.`;}
-  else {state='check';title='자세와 촬영 환경을 함께 확인해요';description=`선택한 좋은 자세 클래스의 점수가 기준 ${threshold}%보다 낮습니다. 사진 한 장만으로 나쁜 자세라고 확정하지 않습니다.`;}
-  if(observations.shoulderAngle!=null&&observations.shoulderAngle>8)tips.push({title:'카메라 수평과 어깨 위치를 확인해요',text:'사진에서 양쪽 어깨를 잇는 선이 기울어 보입니다. 카메라가 기울었는지 확인하고, 어깨에 힘을 뺀 뒤 정면에서 다시 비교해 보세요.'});
-  if(observations.headOffset!=null&&observations.headOffset>.22)tips.push({title:'정면에서 머리 위치를 확인해요',text:'사진에서 코 위치가 양쪽 어깨의 중심과 떨어져 보입니다. 옆을 보거나 카메라가 한쪽에 있는지 확인해 주세요.'});
-  tips.push({title:'내 몸이 편한지 먼저 살펴보세요',text:'등과 발을 편안하게 지지하고, 모니터를 정면에 두어 목과 어깨에 힘이 들어가지 않는지 확인해 보세요.'});
-  tips.push({title:'매일 비슷한 환경에서 비교해요',text:'비슷한 카메라 높이·거리·방향으로 촬영하면 사진을 비교하기 쉽습니다. 한 장의 사진은 하루 전체의 자세 습관을 대표하지 않습니다.'});
+  if(classes.length<2){title='비교할 자세 클래스가 부족해요';description='클래스가 1개인 모델로는 자세를 구별할 수 없습니다.';limitation='좋은 자세와 비교용 자세 등 두 개 이상의 클래스를 학습한 모델이 필요합니다.';}
+  else if(!goodClass||!classes.includes(goodClass)){title='좋은 자세 클래스를 직접 선택해 주세요';description='설정에서 실제로 좋은 자세를 학습시킨 클래스를 지정해야 합니다. Class 1이라는 이름만으로 의미를 추측하지 않습니다.';}
+  else if(!clear){title='클래스 분류가 충분히 뚜렷하지 않아요';description=`사진은 최상위 클래스가 최소 ${Math.round(minimum*100)}% 점수여야 합니다. 현재 결과만으로 좋은 자세라고 표시하지 않습니다.`;}
+  else if(top.className!==goodClass){state='check';title='좋은 자세 기준과 다르게 분류됐어요';description='선택한 좋은 자세 클래스가 아닌 다른 클래스의 점수가 높습니다. 클래스 선택과 촬영 환경을 확인하고 자세를 바꾸어 비교해 보세요.';}
+  else if(observations.shoulderAngle==null||observations.headOffset==null||observations.shoulderAngle>8||observations.headOffset>.22){title='분류 점수와 사진 정렬 정보를 함께 확인해 주세요';description='좋은 자세 클래스 점수는 높지만 사진 정렬 정보가 부족하거나 안내 범위를 벗어났습니다. 좋은 자세 판정을 보류합니다.';}
+  else {state='good';title='모델의 좋은 자세 클래스와 유사해요';description='분류 점수와 사진 정렬 확인 조건을 통과했습니다. 다만 앞뒤로 숙인 정도나 허리·척추 상태가 정상이라는 뜻은 아닙니다.';}
+  if(observations.shoulderAngle!=null&&observations.shoulderAngle>8)tips.push({title:'카메라 수평과 어깨 위치를 확인해요',text:'어깨선이 기울어 보입니다. 촬영 각도 때문에 달라질 수 있으므로 카메라를 수평으로 맞추고 정면에서 다시 찍어 주세요.'});
+  if(observations.headOffset!=null&&observations.headOffset>.22)tips.push({title:'정면에서 머리 위치를 확인해요',text:'코가 양쪽 어깨의 중심과 떨어져 보입니다. 사진 촬영 방향을 확인하고 정면에서 다시 비교해 주세요.'});
+  tips.push({title:'앞뒤 기울기는 별도 확인이 필요해요',text:'정면 사진의 좌우 정렬만으로 앞으로 숙인 목이나 굽은 허리를 구별할 수 없습니다. 실제 사용 환경과 다양한 자세를 학습한 모델이 필요합니다.'});
+  tips.push({title:'같은 조건에서 비교해요',text:'카메라 높이·거리·방향을 일정하게 하고 좋은 자세와 비교 자세 사진을 함께 확인해 주세요. 한 장의 결과를 하루 전체 자세로 해석하지 마세요.'});
  }
- return {state,title,description,limitation,tips,observations:poseOK?observations:{shoulderAngle:null,headOffset:null},predictions:poseOK?predictions.map(p=>({className:p.className,probability:clamp(p.probability,0,1)})):[],poseOK};
+ return {decisionVersion:2,state,title,description,limitation,tips,observations:poseOK?observations:{shoulderAngle:null,headOffset:null},predictions:poseOK?predictions.map(p=>({className:p.className,probability:clamp(p.probability,0,1)})):[],poseOK};
 }
 function validPhotoDate(value,today=localDate(Date.now())) {
  return typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&localDate(value+'T12:00:00')===value&&value<=today;
 }
 function validPhotoEntry(entry) {
- if(!entry||typeof entry.id!=='string'||entry.id.length>100||!validPhotoDate(entry.date)||!Number.isFinite(Date.parse(entry.createdAt)))return false;
+ if(!entry||typeof entry.id!=='string'||entry.id.length>100||!entry.id||!validPhotoDate(entry.date)||typeof entry.createdAt!=='string'||entry.createdAt.length>64||!Number.isFinite(Date.parse(entry.createdAt)))return false;
  if(typeof entry.note!=='string'||entry.note.length>500||typeof entry.modelUrl!=='string'||entry.modelUrl.length>2048||typeof entry.goodClass!=='string'||entry.goodClass.length>1000)return false;
  if(!Number.isFinite(entry.threshold)||entry.threshold<50||entry.threshold>99)return false;
  const f=entry.feedback;
  if(!f||!['good','check','unknown'].includes(f.state)||typeof f.poseOK!=='boolean'||!Array.isArray(f.tips)||f.tips.length>10||!Array.isArray(f.predictions)||f.predictions.length>500)return false;
- if(!['title','description','limitation'].every(k=>typeof f[k]==='string'&&f[k].length<=2000)||!f.tips.every(t=>typeof t.title==='string'&&t.title.length<500&&typeof t.text==='string'&&t.text.length<2000))return false;
- if(!f.predictions.every(p=>typeof p.className==='string'&&p.className.length<1000&&Number.isFinite(p.probability)&&p.probability>=0&&p.probability<=1))return false;
+ if(!['title','description','limitation'].every(k=>typeof f[k]==='string'&&f[k].length<=2000)||!f.tips.every(t=>t&&typeof t.title==='string'&&t.title.length<500&&typeof t.text==='string'&&t.text.length<2000))return false;
+ if(!f.predictions.every(p=>p&&typeof p.className==='string'&&p.className.length<1000&&Number.isFinite(p.probability)&&p.probability>=0&&p.probability<=1))return false;
  return f.observations&&['shoulderAngle','headOffset'].every(k=>f.observations[k]===null||(Number.isFinite(f.observations[k])&&f.observations[k]>=0&&f.observations[k]<=1000));
 }
-window.PhotoCore=Object.freeze({photoObservations,photoFeedback,validPhotoDate,validPhotoEntry});
+window.PhotoCore=Object.freeze({photoObservations,photoFeedback,qualifyPhotoPose,validPhotoDate,validPhotoEntry});
 const photoState={db:null,dbPromise:null,entries:[],draft:null,busy:false,loading:false,stream:null,cameraOpening:false,urls:[],detailUrl:null,detailId:null,galleryVersion:0,limit:12,loadError:null};
 function photoNotice(text,type=''){const box=$('photo-notice');box.textContent=text;box.className='notice'+(type?' '+type:'');}
 function photoUi(){
@@ -503,12 +515,40 @@ function openPhotoDb(){
 async function photoRead(store,key){const db=await openPhotoDb();return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readonly'),request=key==null?tx.objectStore(store).getAll():tx.objectStore(store).get(key);let value;request.onsuccess=()=>value=request.result;tx.oncomplete=()=>resolve(value);tx.onabort=tx.onerror=()=>reject(tx.error||request.error||new Error('사진 기록을 읽지 못했습니다.'));});}
 async function photoWrite(operation){const db=await openPhotoDb();return new Promise((resolve,reject)=>{const tx=db.transaction(['entries','images'],'readwrite');try{operation(tx.objectStore('entries'),tx.objectStore('images'));}catch(error){tx.abort();reject(error);return;}tx.oncomplete=()=>resolve();tx.onabort=tx.onerror=()=>reject(tx.error||new Error('사진 기록을 저장하지 못했습니다. 저장 공간과 브라우저 권한을 확인해 주세요.'));});}
 function canvasBlob(canvas,quality=.86){return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('사진 파일을 만들지 못했습니다.')),'image/jpeg',quality));}
+function imageDimensions(bytes,type){
+ const b=new Uint8Array(bytes),v=new DataView(b.buffer,b.byteOffset,b.byteLength);
+ const tag=(at,text)=>at+text.length<=b.length&&[...text].every((c,i)=>b[at+i]===c.charCodeAt(0));
+ const done=(width,height)=>{if(!width||!height||width*height>PHOTO_LIMITS.pixels)throw new Error('사진은 4,000만 화소 이하여야 합니다.');return {width,height};};
+ if(type==='image/png'&&b.length>=33&&b[0]===137&&tag(1,'PNG\r\n\x1a\n')&&v.getUint32(8)===13&&tag(12,'IHDR'))return done(v.getUint32(16),v.getUint32(20));
+ if(type==='image/jpeg'&&b[0]===255&&b[1]===216){
+  let at=2;
+  while(at+4<=b.length){
+   if(b[at++]!==255)break;while(b[at]===255)at++;const marker=b[at++];
+   if(marker===0xda||marker===0xd9)break;if(marker===0x01||(marker>=0xd0&&marker<=0xd8))continue;
+   if(at+2>b.length)break;const size=v.getUint16(at);if(size<2||at+size>b.length)break;
+   if(marker>=0xc0&&marker<=0xcf&&![0xc4,0xc8,0xcc].includes(marker)&&size>=8)return done(v.getUint16(at+5),v.getUint16(at+3));
+   at+=size;
+  }
+ }
+ if(type==='image/webp'&&tag(0,'RIFF')&&tag(8,'WEBP')){
+  let at=12;
+  while(at+8<=b.length){
+   const size=v.getUint32(at+4,true),data=at+8;
+   if(tag(at,'VP8X')&&size>=10&&data+10<=b.length)return done(1+b[data+4]+(b[data+5]<<8)+(b[data+6]<<16),1+b[data+7]+(b[data+8]<<8)+(b[data+9]<<16));
+   if(tag(at,'VP8 ')&&size>=10&&data+10<=b.length&&tag(data+3,'\x9d\x01\x2a'))return done(v.getUint16(data+6,true)&0x3fff,v.getUint16(data+8,true)&0x3fff);
+   if(tag(at,'VP8L')&&size>=5&&data+5<=b.length&&b[data]===0x2f)return done(1+b[data+1]+((b[data+2]&0x3f)<<8),1+(b[data+2]>>6)+(b[data+3]<<2)+((b[data+4]&15)<<10));
+   at=data+size+(size%2);
+  }
+ }
+ throw new Error('사진 헤더를 확인할 수 없습니다. JPG·PNG·WebP로 다시 저장해 주세요.');
+}
 async function normalizedPhoto(file){
- if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error('JPG, PNG, WebP 사진을 선택해 주세요. HEIC 등은 JPG로 변환한 뒤 올려 주세요.');
- if(file.size>15*1024*1024)throw new Error('사진은 15MB 이하로 선택해 주세요.');
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error('JPG, PNG, WebP 사진을 선택해 주세요.');
+ if(file.size>PHOTO_LIMITS.fileBytes)throw new Error('사진은 15MB 이하로 선택해 주세요.');
+ const expected=imageDimensions(await file.slice(0,PHOTO_LIMITS.headerBytes).arrayBuffer(),file.type);
  let image;
- try{image=await createImageBitmap(file,{imageOrientation:'from-image'});}catch{throw new Error('사진을 열지 못했습니다. 손상되지 않은 JPG, PNG, WebP 파일로 다시 시도해 주세요.');}
- try{if(image.width*image.height>40_000_000||!image.width||!image.height)throw new Error('사진 해상도가 너무 큽니다. 4,000만 화소 이하로 줄여 주세요.');
+ try{image=await createImageBitmap(file,{imageOrientation:'from-image'});}catch{throw new Error('사진을 열지 못했습니다. 손상되지 않은 사진으로 다시 시도해 주세요.');}
+ try{if(!image.width||!image.height||image.width*image.height>PHOTO_LIMITS.pixels||image.width*image.height!==expected.width*expected.height)throw new Error('사진 크기 정보가 올바르지 않습니다.');
   const scale=Math.min(1,1280/Math.max(image.width,image.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));const ctx=canvas.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);
   const thumb=document.createElement('canvas');const ts=Math.min(1,320/Math.max(canvas.width,canvas.height));thumb.width=Math.max(1,Math.round(canvas.width*ts));thumb.height=Math.max(1,Math.round(canvas.height*ts));thumb.getContext('2d').drawImage(canvas,0,0,thumb.width,thumb.height);
   return {blob:await canvasBlob(canvas),thumbnail:await canvasBlob(thumb,.75),width:canvas.width,height:canvas.height};
@@ -517,8 +557,8 @@ async function normalizedPhoto(file){
 async function choosePhoto(file,source='upload'){
  if(!file||photoState.busy||photoState.loading)return;
  photoState.loading=true;photoUi();photoNotice('');
- try{const normalized=await normalizedPhoto(file);stopPhotoCamera();if(photoState.draft?.url)URL.revokeObjectURL(photoState.draft.url);photoState.draft={...normalized,url:URL.createObjectURL(normalized.blob),source,feedback:null,saved:false};$('photo-preview').src=photoState.draft.url;$('photo-preview').hidden=false;$('photo-empty').hidden=true;$('photo-feedback').innerHTML=emptyPanel('사진을 준비했어요','사진 피드백 받기를 누르면 확인할 점을 안내합니다.');$('photo-mirror').checked=source==='camera'?settings.mirror:false;
- }catch(error){photoNotice(error.message,'error');}
+ try{const normalized=await normalizedPhoto(file);stopPhotoCamera();if(photoState.draft?.url)URL.revokeObjectURL(photoState.draft.url);photoState.draft={...normalized,url:URL.createObjectURL(normalized.blob),source,feedback:null,saved:false};$('photo-preview').src=photoState.draft.url;$('photo-preview').hidden=false;$('photo-empty').hidden=true;$('photo-feedback').innerHTML=emptyPanel('사진을 준비했어요','사진 피드백 받기를 누르면 확인할 점을 안내합니다.');$('photo-mirror').checked=source==='camera'?settings.mirror:false;return true;
+ }catch(error){photoNotice(error.message,'error');return false;}
  finally{photoState.loading=false;$('photo-file').value='';photoUi();}
 }
 async function startPhotoCamera(){
@@ -528,7 +568,7 @@ async function startPhotoCamera(){
  try{if(!isSecureContext||!navigator.mediaDevices?.getUserMedia)throw new Error('카메라 촬영은 Chrome의 HTTPS 또는 localhost 환경에서 사용할 수 있습니다. 사진 파일 선택도 이용할 수 있어요.');
   stream=await navigator.mediaDevices.getUserMedia({audio:false,video:settings.cameraId?{deviceId:{exact:settings.cameraId},width:{ideal:1280},height:{ideal:720}}:{facingMode:'user',width:{ideal:1280},height:{ideal:720}}});
   if(document.hidden||view!=='photos'){stream.getTracks().forEach(t=>t.stop());return;}
-  photoState.stream=stream;$('photo-video').srcObject=stream;await $('photo-video').play();$('photo-video').hidden=false;$('photo-preview').hidden=true;$('photo-empty').hidden=true;$('photo-capture').hidden=false;$('photo-camera-stop').hidden=false;$('photo-camera-start').hidden=true;
+  photoState.stream=stream;$('photo-video').srcObject=stream;await $('photo-video').play();if(photoState.stream!==stream||document.hidden||view!=='photos'){stream.getTracks().forEach(t=>t.stop());return;}$('photo-video').hidden=false;$('photo-preview').hidden=true;$('photo-empty').hidden=true;$('photo-capture').hidden=false;$('photo-camera-stop').hidden=false;$('photo-camera-start').hidden=true;
   stream.getVideoTracks().forEach(track=>track.addEventListener('ended',()=>{if(photoState.stream){stopPhotoCamera();photoNotice('사진 촬영용 카메라가 연결 해제되었습니다. 다시 연결하거나 사진 파일을 선택하세요.','warning');}}));
  }catch(error){stream?.getTracks().forEach(t=>t.stop());stopPhotoCamera();photoNotice(cameraError(error),'error');}
  finally{photoState.cameraOpening=false;photoUi();}
@@ -542,8 +582,9 @@ function feedbackMarkup(feedback,meta={}){
  const f=feedback;
  const probability=f.predictions.find(p=>p.className===meta.goodClass)?.probability;
  const observations=f.observations;
+ const legacy=f.decisionVersion===2?'':'<p class="notice warning">이전 판정 기준으로 분석된 기록입니다. ‘이 사진 다시 분석’으로 새 기준을 적용할 수 있습니다.</p>';
  const measures=f.poseOK?`<div class="photo-observations"><div class="photo-observation">사진 속 어깨선 기울기<strong>${observations.shoulderAngle==null?'—':observations.shoulderAngle.toFixed(1)+'°'}</strong></div><div class="photo-observation">머리 중심의 좌우 차이<strong>${observations.headOffset==null?'—':Math.round(observations.headOffset*100)+'%'}</strong></div></div><p class="photo-model-note">어깨선 기울기와 코·어깨 중심의 화면상 거리입니다. 머리 좌우 차이는 양쪽 어깨 너비에 대한 비율입니다. 촬영 각도에 영향을 받으며, 척추 각도나 거북목·비대칭의 진단 지표가 아닙니다. 안내 기준(8°, 22%)은 앱의 참고용 규칙이며 임상 기준이 아닙니다.</p>`:'';
- return `<div class="status-box ${esc(f.state)}"><strong style="font-size:18px">${esc(f.title)}</strong><p>${esc(f.description)}</p></div>${f.limitation?`<div class="notice warning" style="font-size:11px">${esc(f.limitation)}</div>`:''}${measures}<ul class="photo-feedback-list">${f.tips.map(t=>`<li><strong>${esc(t.title)}</strong>${esc(t.text)}</li>`).join('')}</ul>${f.predictions.length?`<details><summary>사진 한 장의 AI 클래스별 점수 ${probability==null?'':`· 선택한 기준 클래스 ${(probability*100).toFixed(1)}%`}</summary>${f.predictions.map(p=>`<div class="photo-class-row"><span>${esc(p.className)}</span><b>${(p.probability*100).toFixed(1)}%</b></div>`).join('')}</details>`:''}<p class="photo-model-note">사진 한 장의 참고 피드백입니다. 자세 유지 시간이나 일일 좋은 자세 비율에 합산하지 않습니다.${meta.modelUrl?'<br>사용 모델: '+esc(meta.modelUrl):''}</p>`;
+ return `${legacy}<div class="status-box ${esc(f.state)}"><strong style="font-size:18px">${esc(f.title)}</strong><p>${esc(f.description)}</p></div>${f.limitation?`<div class="notice warning" style="font-size:11px">${esc(f.limitation)}</div>`:''}${measures}<ul class="photo-feedback-list">${f.tips.map(t=>`<li><strong>${esc(t.title)}</strong>${esc(t.text)}</li>`).join('')}</ul>${f.predictions.length?`<details><summary>사진 한 장의 AI 클래스별 점수 ${probability==null?'':`· 선택한 기준 클래스 ${(probability*100).toFixed(1)}%`}</summary>${f.predictions.map(p=>`<div class="photo-class-row"><span>${esc(p.className)}</span><b>${(p.probability*100).toFixed(1)}%</b></div>`).join('')}</details>`:''}<p class="photo-model-note">사진 한 장의 참고 피드백입니다. 자세 유지 시간이나 일일 좋은 자세 비율에 합산하지 않습니다.${meta.modelUrl?'<br>사용 모델: '+esc(meta.modelUrl):''}</p>`;
 }
 async function analyzePhoto(){
  if(!photoState.draft||photoState.busy||photoState.loading)return;
@@ -552,7 +593,7 @@ async function analyzePhoto(){
  try{if(!model)await loadModel();const draft=photoState.draft;const image=await createImageBitmap(draft.blob);let canvas;
   try{canvas=document.createElement('canvas');canvas.width=400;canvas.height=400;const ctx=canvas.getContext('2d');ctx.fillStyle='#eef2f7';ctx.fillRect(0,0,400,400);const scale=Math.min(400/image.width,400/image.height);const w=image.width*scale,h=image.height*scale;if($('photo-mirror').checked){ctx.translate(400,0);ctx.scale(-1,1);}ctx.drawImage(image,(400-w)/2,(400-h)/2,w,h);}finally{image.close();}
   const {pose,posenetOutput}=await model.estimatePose(canvas);const predictions=await model.predict(posenetOutput);if(predictions.some(p=>typeof p.className!=='string'||!Number.isFinite(p.probability)))throw new Error('모델이 올바른 분류 점수를 반환하지 않았습니다.');
-  draft.feedback=photoFeedback({poseOK:qualifyPose(pose),predictions,classes:labels,goodClass:settings.goodClass,threshold:settings.threshold,observations:photoObservations(pose)});draft.modelUrl=settings.modelUrl;draft.goodClass=settings.goodClass;draft.threshold=settings.threshold;draft.mirror=$('photo-mirror').checked;draft.saved=false;
+  draft.feedback=photoFeedback({poseOK:qualifyPhotoPose(pose),predictions,classes:labels,goodClass:settings.goodClassConfirmed?settings.goodClass:'',threshold:settings.threshold,observations:photoObservations(pose)});draft.modelUrl=settings.modelUrl;draft.goodClass=settings.goodClass;draft.threshold=settings.threshold;draft.mirror=$('photo-mirror').checked;draft.saved=false;
   $('photo-feedback').innerHTML=feedbackMarkup(draft.feedback,draft);if(pose){const ctx=canvas.getContext('2d');tmPose.drawKeypoints(pose.keypoints,.45,ctx);tmPose.drawSkeleton(pose.keypoints,.45,ctx);canvas.className='photo-analysis-canvas';canvas.setAttribute('aria-label','사진에서 인식한 관절점');$('photo-feedback').append(canvas);}
   toast('사진 피드백을 준비했습니다. 날짜와 메모를 확인한 뒤 저장해 주세요.');
  }catch(error){photoNotice('사진 분석 실패: '+error.message,'error');}
@@ -562,14 +603,14 @@ async function savePhoto(){
  const draft=photoState.draft;if(!draft?.feedback||draft.saved||photoState.busy||photoState.loading)return;
  const date=$('photo-date').value;if(!validPhotoDate(date)){photoNotice('오늘 또는 이전의 올바른 기록 날짜를 선택해 주세요.','warning');return;}
  photoState.busy=true;photoUi();photoNotice('');
- const entry={id:crypto.randomUUID?.()||`photo-${Date.now()}-${Math.random().toString(36).slice(2)}`,date,createdAt:new Date().toISOString(),note:$('photo-note').value.trim(),source:draft.source,width:draft.width,height:draft.height,mirror:draft.mirror,modelUrl:draft.modelUrl,goodClass:draft.goodClass,threshold:draft.threshold,feedback:draft.feedback};
- try{if(!validPhotoEntry(entry))throw new Error('사진 피드백의 형식을 확인할 수 없습니다. 사진을 다시 분석해 주세요.');await photoWrite((entries,images)=>{entries.add(entry);images.add({id:entry.id,blob:draft.blob,thumbnail:draft.thumbnail});});draft.saved=true;await loadPhotoJournal();toast('사진과 피드백을 날짜별 기록에 저장했습니다.');}
+ const entry={id:draft.recordId||(crypto.randomUUID?.()||`photo-${Date.now()}-${Math.random().toString(36).slice(2)}`),date,createdAt:draft.createdAt||new Date().toISOString(),note:$('photo-note').value.trim(),source:draft.source,width:draft.width,height:draft.height,mirror:draft.mirror,modelUrl:draft.modelUrl,goodClass:draft.goodClass,threshold:draft.threshold,feedback:draft.feedback};
+ try{if(!validPhotoEntry(entry))throw new Error('사진 피드백의 형식을 확인할 수 없습니다. 사진을 다시 분석해 주세요.');await photoWrite((entries,images)=>{entries.put(entry);images.put({id:entry.id,blob:draft.blob,thumbnail:draft.thumbnail});});draft.saved=true;await loadPhotoJournal();toast('사진과 피드백을 날짜별 기록에 저장했습니다.');}
  catch(error){photoNotice(error.message+' 사진은 아직 저장되지 않았습니다. 미리보기를 유지했으니 공간을 확보한 뒤 다시 시도해 주세요.','error');}
  finally{photoState.busy=false;photoUi();}
 }
 function releaseGalleryUrls(){for(const url of photoState.urls)URL.revokeObjectURL(url);photoState.urls=[];}
 async function loadPhotoJournal(){
- try{const entries=await photoRead('entries');if(!Array.isArray(entries)||!entries.every(validPhotoEntry))throw new Error('일부 사진 기록의 형식을 확인할 수 없습니다. 저장소를 덮어쓰지 않았습니다.');photoState.entries=entries.sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt));photoState.loadError=null;renderPhotoJournal();}
+ try{const entries=await photoRead('entries');if(!Array.isArray(entries))throw new Error('사진 기록 형식을 확인할 수 없습니다.');const valid=entries.filter(validPhotoEntry);const invalid=entries.length-valid.length;photoState.entries=valid.sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt));photoState.loadError=null;if(invalid)photoNotice(`형식이 올바르지 않은 사진 기록 ${invalid}개를 목록에서 제외했습니다. 원본은 보존했으며 사진 기록 백업으로 내려받을 수 있습니다.`,'warning');renderPhotoJournal();}
  catch(error){photoState.loadError=error.message;$('photo-history-summary').textContent='사진 저장소를 확인할 수 없습니다.';$('photo-history').innerHTML=emptyPanel('사진 기록을 불러오지 못했어요',error.message);photoNotice(error.message,'error');}
 }
 async function renderPhotoJournal(){
@@ -580,21 +621,54 @@ async function renderPhotoJournal(){
  for(const entry of visible){try{const image=await photoRead('images',entry.id);if(version!==photoState.galleryVersion)return;const target=[...$('photo-history').querySelectorAll('[data-photo-image]')].find(el=>el.dataset.photoImage===entry.id);if(image?.thumbnail instanceof Blob&&target){const url=URL.createObjectURL(image.thumbnail);photoState.urls.push(url);target.src=url;}else if(target)target.alt='사진 파일을 찾지 못했습니다.';}catch(error){if(version===photoState.galleryVersion)photoNotice('일부 사진을 불러오지 못했습니다: '+error.message,'warning');}}
 }
 async function showPhotoDetail(id){const entry=photoState.entries.find(e=>e.id===id);if(!entry)return;try{const image=await photoRead('images',id);if(!image?.blob)throw new Error('저장된 사진 파일이 없습니다.');if(photoState.detailUrl)URL.revokeObjectURL(photoState.detailUrl);photoState.detailUrl=URL.createObjectURL(image.blob);photoState.detailId=id;$('photo-detail-image').src=photoState.detailUrl;$('photo-detail-date').textContent=`${entry.date} · ${dateTime(entry.createdAt)} 저장`;$('photo-detail-note').textContent=entry.note;$('photo-detail-feedback').innerHTML=feedbackMarkup(entry.feedback,entry);$('photo-detail-dialog').showModal();}catch(error){photoNotice(error.message,'error');}}
+async function reanalyzePhoto(){
+ if(photoState.busy||photoState.loading||running||starting||stopping){toast('진행 중인 분석·측정을 마친 뒤 다시 분석해 주세요.');return;}
+ const entry=photoState.entries.find(e=>e.id===photoState.detailId);if(!entry)return;
+ try{const image=await photoRead('images',entry.id);if(!image?.blob)throw new Error('사진 파일이 없습니다.');
+  $('photo-detail-dialog').close();const chosen=await choosePhoto(image.blob,entry.source||'upload');if(!chosen)return;
+  photoState.draft.recordId=entry.id;photoState.draft.createdAt=entry.createdAt;$('photo-date').value=entry.date;$('photo-note').value=entry.note;$('photo-mirror').checked=!!entry.mirror;
+  photoNotice('좋은 자세 클래스를 확인한 뒤 사진 피드백을 받아 주세요. 저장하면 이 기록의 피드백을 갱신합니다.');
+ }catch(error){photoNotice(error.message,'error');}
+}
 function closePhotoDetail(){if(photoState.detailUrl)URL.revokeObjectURL(photoState.detailUrl);photoState.detailUrl=null;photoState.detailId=null;$('photo-detail-image').removeAttribute('src');}
 async function deletePhoto(id){const entry=photoState.entries.find(e=>e.id===id);if(!entry||photoState.busy)return;if(!await askConfirm('이 사진 기록을 삭제할까요?',`${entry.date}의 사진과 피드백을 삭제합니다. 백업이 없으면 복원할 수 없습니다.`,'사진 삭제'))return;try{await photoWrite((entries,images)=>{entries.delete(id);images.delete(id);});await loadPhotoJournal();toast('사진과 피드백을 삭제했습니다.');}catch(error){photoNotice(error.message,'error');}}
 function blobDataUrl(blob){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error);reader.readAsDataURL(blob);});}
 async function backupPhotos(){if(photoState.busy)return;photoState.busy=true;photoUi();try{const entries=await photoRead('entries');if(!entries.length){toast('백업할 사진 기록이 없습니다.');return;}const items=[];for(const entry of entries){const image=await photoRead('images',entry.id);if(!image?.blob)throw new Error('일부 사진 파일이 없어 백업을 완료하지 못했습니다.');items.push({entry,image:await blobDataUrl(image.blob)});}download(`bareungyeol-photos-${localDate(Date.now())}.json`,JSON.stringify({type:'bareungyeol.photos',version:1,items},null,2),'application/json');toast('사진과 피드백을 함께 백업했습니다.');}catch(error){photoNotice(error.message,'error');}finally{photoState.busy=false;photoUi();}}
-async function restorePhotos(file){if(!file||photoState.busy||photoState.loading)return;photoState.busy=true;photoUi();try{if(file.size>100*1024*1024)throw new Error('사진 백업은 100MB 이하로 선택해 주세요.');const data=JSON.parse(await file.text());if(data.type!=='bareungyeol.photos'||data.version!==1||!Array.isArray(data.items)||data.items.length>1000)throw new Error('지원하는 사진 백업 형식이 아닙니다.');const items=[];for(const item of data.items){if(!validPhotoEntry(item.entry)||typeof item.image!=='string'||!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(item.image))throw new Error('백업의 사진 또는 피드백 형식이 올바르지 않습니다.');const bytes=Uint8Array.from(atob(item.image.split(',')[1]),c=>c.charCodeAt(0));const image=await normalizedPhoto(new Blob([bytes],{type:'image/jpeg'}));items.push({entry:item.entry,image});}if(!await askConfirm('사진 백업을 복원할까요?',`${items.length}장과 피드백을 합칩니다. 같은 ID의 기록은 백업 값으로 갱신됩니다.`,'사진 복원'))return;await photoWrite((entries,images)=>{for(const {entry,image} of items){entries.put(entry);images.put({id:entry.id,blob:image.blob,thumbnail:image.thumbnail});}});await loadPhotoJournal();toast('사진 기록을 복원했습니다.');}catch(error){photoNotice('사진 복원 실패: '+error.message,'error');}finally{photoState.busy=false;$('photo-backup-file').value='';photoUi();}}
+async function restorePhotos(file){
+ if(!file||photoState.busy||photoState.loading)return;photoState.busy=true;photoUi();
+ try{
+  if(file.size>PHOTO_LIMITS.backupBytes)throw new Error('사진 백업은 100MB 이하로 선택해 주세요.');
+  const data=JSON.parse(await file.text());
+  if(!data||data.type!=='bareungyeol.photos'||data.version!==1||!Array.isArray(data.items)||data.items.length>PHOTO_LIMITS.backupItems)throw new Error('지원하는 사진 백업 형식이 아닙니다.');
+  const ids=new Set();
+  for(const item of data.items){
+   if(!item||!validPhotoEntry(item.entry)||ids.has(item.entry.id)||typeof item.image!=='string'||item.image.length>Math.ceil(PHOTO_LIMITS.fileBytes/3)*4+23||!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(item.image))throw new Error('백업의 사진 또는 피드백 형식이 올바르지 않습니다.');
+   ids.add(item.entry.id);
+  }
+  if(!await askConfirm('사진 백업을 복원할까요?',`${data.items.length}장과 피드백을 합칩니다. 같은 ID의 기록은 백업 값으로 갱신됩니다.`,'사진 복원'))return;
+  const items=[];let totalBytes=0;
+  for(const item of data.items){
+   const bytes=Uint8Array.from(atob(item.image.slice(23)),c=>c.charCodeAt(0));item.image=null;
+   const image=await normalizedPhoto(new Blob([bytes],{type:'image/jpeg'}));
+   totalBytes+=image.blob.size+image.thumbnail.size;
+   if(totalBytes>PHOTO_LIMITS.restoreBytes)throw new Error('복원할 사진의 전체 크기가 32MB를 넘습니다. 백업을 나누어 주세요. 저장된 기록은 변경하지 않았습니다.');
+   items.push({entry:item.entry,image});
+  }
+  await photoWrite((entries,images)=>{for(const {entry,image} of items){entries.put(entry);images.put({id:entry.id,blob:image.blob,thumbnail:image.thumbnail});}});
+  await loadPhotoJournal();toast('사진 기록을 복원했습니다.');
+ }catch(error){photoNotice('사진 복원 실패: '+error.message,'error');}
+ finally{photoState.busy=false;$('photo-backup-file').value='';photoUi();}
+}
 function initPhotos(){
  $('photo-date').value=localDate(Date.now());$('photo-date').max=localDate(Date.now());$('photo-filter-date').max=localDate(Date.now());
  $('photo-choose').addEventListener('click',()=>$('photo-file').click());$('photo-file').addEventListener('change',()=>choosePhoto($('photo-file').files[0]));$('photo-camera-start').addEventListener('click',startPhotoCamera);$('photo-capture').addEventListener('click',capturePhoto);$('photo-camera-stop').addEventListener('click',stopPhotoCamera);$('photo-analyze').addEventListener('click',analyzePhoto);$('photo-save').addEventListener('click',savePhoto);
  $('photo-mirror').addEventListener('change',()=>{if(photoState.draft){photoState.draft.feedback=null;photoState.draft.saved=false;$('photo-feedback').innerHTML=emptyPanel('분석 방향을 바꿨어요','변경한 방향으로 사진 피드백을 다시 받아 주세요.');photoUi();}});
  $('photo-filter-date').addEventListener('change',()=>{photoState.limit=12;renderPhotoJournal();});$('photo-clear-filter').addEventListener('click',()=>{$('photo-filter-date').value='';photoState.limit=12;renderPhotoJournal();});$('photo-more').addEventListener('click',()=>{photoState.limit+=12;renderPhotoJournal();});
  document.addEventListener('click',event=>{const detail=event.target.closest('[data-photo-detail]'),del=event.target.closest('[data-photo-delete]');if(detail)showPhotoDetail(detail.dataset.photoDetail);if(del)deletePhoto(del.dataset.photoDelete);});
- $('photo-detail-close').addEventListener('click',()=>$('photo-detail-dialog').close());$('photo-detail-dialog').addEventListener('close',closePhotoDetail);
+ $('photo-reanalyze').addEventListener('click',reanalyzePhoto);$('photo-detail-close').addEventListener('click',()=>$('photo-detail-dialog').close());$('photo-detail-dialog').addEventListener('close',closePhotoDetail);
  $('photo-download').addEventListener('click',async()=>{const entry=photoState.entries.find(e=>e.id===photoState.detailId);if(!entry)return;try{const image=await photoRead('images',entry.id);if(!image?.blob)throw new Error('사진 파일이 없습니다.');download(`posture-${entry.date}.jpg`,image.blob,'image/jpeg');}catch(error){photoNotice(error.message,'error');}});
  $('photo-backup').addEventListener('click',backupPhotos);$('photo-restore').addEventListener('click',()=>$('photo-backup-file').click());$('photo-backup-file').addEventListener('change',()=>restorePhotos($('photo-backup-file').files[0]));
- $('photo-delete-all').addEventListener('click',async()=>{if(photoState.busy||!photoState.entries.length)return;if(!await askConfirm('사진 기록을 모두 삭제할까요?',`${photoState.entries.length}장의 사진과 피드백을 삭제합니다. 실시간 측정 기록은 유지됩니다. 먼저 사진 기록 백업을 권장합니다.`,'사진 전체 삭제'))return;try{await photoWrite((entries,images)=>{entries.clear();images.clear();});await loadPhotoJournal();toast('사진 기록을 모두 삭제했습니다.');}catch(error){photoNotice(error.message,'error');}});
+ $('photo-delete-all').addEventListener('click',async()=>{if(photoState.busy)return;if(!await askConfirm('사진 기록을 모두 삭제할까요?',`목록에 표시되지 않는 손상 기록을 포함해 사진과 피드백을 모두 삭제합니다. 실시간 측정 기록은 유지됩니다. 먼저 사진 기록 백업을 권장합니다.`,'사진 전체 삭제'))return;try{await photoWrite((entries,images)=>{entries.clear();images.clear();});await loadPhotoJournal();toast('사진 기록을 모두 삭제했습니다.');}catch(error){photoNotice(error.message,'error');}});
  document.addEventListener('visibilitychange',()=>{if(document.hidden&&photoState.stream){stopPhotoCamera();photoNotice('탭이 가려져 사진 촬영용 카메라를 껐습니다. 필요하면 다시 켜 주세요.');}});
  window.addEventListener('pagehide',()=>{stopPhotoCamera();releaseGalleryUrls();if(photoState.draft?.url)URL.revokeObjectURL(photoState.draft.url);});
  loadPhotoJournal();photoUi();

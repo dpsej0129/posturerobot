@@ -474,6 +474,33 @@ function sidePhotoFeedback(poseOK,observations){
   tips:[{title:'카메라를 수평으로 두세요',text:'몸의 측면과 카메라가 직각이 되도록 맞추고 귀·어깨·골반이 가려지지 않게 촬영하세요. 같은 높이와 거리에서 비교하세요.'},{title:'측정선을 먼저 확인해 주세요',text:'귀–어깨와 어깨–골반을 이은 선이 실제 위치에 맞아야 합니다. 점이 배경이나 반대쪽 몸에 잡히면 사진을 다시 찍어 주세요.'}],
   observations:usable?observations:{shoulderAngle:null,headOffset:null,earShoulderAngle:null,trunkAngle:null,earShoulderOffset:null,side:null},predictions:[]};
 }
+function photoUpperBodyCrop(pose,width,height,size=400,mirror=false){
+ if(!pose||!Array.isArray(pose.keypoints)||!Number.isFinite(width)||!Number.isFinite(height)||width<=0||height<=0)return null;
+ const point=part=>pose.keypoints.find(k=>k.part===part&&Number.isFinite(k.score)&&k.score>=.45&&Number.isFinite(k.position?.x)&&Number.isFinite(k.position?.y));
+ const left=point('leftShoulder'),right=point('rightShoulder');if(!left||!right)return null;
+ const span=Math.abs(left.position.x-right.position.x);if(span<size*.08||span>=size*.2)return null;
+ const shouldersY=Math.min(left.position.y,right.position.y);
+ const head=['nose','leftEye','rightEye','leftEar','rightEar'].map(point).filter(p=>p&&p.position.y<shouldersY);
+ const torso=['leftHip','rightHip','leftElbow','rightElbow'].map(point).filter(p=>p&&p.position.y>shouldersY+span*.4);
+ if(head.length<2||!torso.length)return null;
+ const scale=Math.min(size/width,size/height),offsetX=(size-width*scale)/2,offsetY=(size-height*scale)/2;
+ const points=[left,right,...head,...torso].map(p=>({x:((mirror?size-p.position.x:p.position.x)-offsetX)/scale,y:(p.position.y-offsetY)/scale}));
+ if(points.some(p=>p.x<0||p.x>width||p.y<0||p.y>height)||span/scale<64)return null;
+ const margin=span/scale;
+ const x=Math.max(0,Math.min(...points.map(p=>p.x))-margin*.4),y=Math.max(0,Math.min(...points.map(p=>p.y))-margin*.5);
+ const endX=Math.min(width,Math.max(...points.map(p=>p.x))+margin*.4),endY=Math.min(height,Math.max(...points.map(p=>p.y))+margin*.25);
+ const w=endX-x,h=endY-y;if(w<=0||h<=0||w*h>=width*height*.9||span/scale*Math.min(size/w,size/h)<size*.2)return null;
+ return {x,y,width:w,height:h};
+}
+function photoPoseReason(pose){
+ if(!pose||!Array.isArray(pose.keypoints)||!Number.isFinite(pose.score)||pose.score<.4)return '사진의 관절 정보를 충분히 확실하게 인식하지 못했습니다. 밝고 선명한 상체 사진으로 다시 확인해 주세요.';
+ const visible=part=>pose.keypoints.find(k=>k.part===part&&k.score>=.7&&Number.isFinite(k.position?.x)&&Number.isFinite(k.position?.y)&&k.position.x>8&&k.position.x<392&&k.position.y>8&&k.position.y<392);
+ const left=visible('leftShoulder'),right=visible('rightShoulder');
+ if(!left||!right)return '양쪽 어깨 위치를 충분히 확실하게 인식하지 못했습니다. 어깨가 잘 보이는 정면 사진으로 다시 확인해 주세요.';
+ if(!['nose','leftEye','rightEye'].every(visible))return '정면의 눈·코를 충분히 확실하게 인식하지 못했습니다. 얼굴이 선명하고 가려지지 않은 사진으로 다시 확인해 주세요.';
+ if(Math.abs(left.position.x-right.position.x)<80)return '상체가 작게 인식되었습니다. 얼굴부터 허리까지 가까이 담은 사진으로 다시 확인해 주세요.';
+ return qualifyPose(pose)?'':'팔 또는 허리의 관절 정보를 충분히 확인하지 못했습니다. 상체가 잘 보이는 정면 사진으로 다시 확인해 주세요.';
+}
 function qualifyPhotoPose(pose,size=400,view='front'){
  if(view==='side')return photoSideObservations(pose,size).side!==null;
  if(!qualifyPose(pose,size)||pose.score<.4)return false;
@@ -481,7 +508,7 @@ function qualifyPhotoPose(pose,size=400,view='front'){
  const left=point('leftShoulder'),right=point('rightShoulder');
  return !!(left&&right&&point('nose')&&point('leftEye')&&point('rightEye')&&Math.abs(left.position.x-right.position.x)>=size*.2);
 }
-function photoFeedback({poseOK,predictions,classes,goodClass,threshold,observations,view='front'}) {
+function photoFeedback({poseOK,predictions,classes,goodClass,threshold,observations,view='front',poseReason=''}) {
  if(view==='side')return sidePhotoFeedback(poseOK,observations);
  const tips=[];
  let state='unknown',title='사진 자세 판정을 보류했어요',description='상체와 얼굴이 잘 보이는 정면 사진으로 다시 확인해 주세요.';
@@ -490,7 +517,7 @@ function photoFeedback({poseOK,predictions,classes,goodClass,threshold,observati
  const top=ordered[0],minimum=Math.max(.9,threshold/100);
  const clear=!!(top&&top.probability>=minimum);
  let limitation='분류 점수는 실제 자세의 정확도나 건강 상태를 뜻하지 않습니다. 정면 사진에서 확인 가능한 정보만 사용합니다.';
- if(!poseOK){tips.push({title:'촬영 상태를 확인해 주세요',text:'정면에서 눈·코·양쪽 어깨와 팔 또는 허리가 선명하게 보이도록 가까이 촬영해 주세요. 측면·가림·작은 인물은 판정을 보류합니다.'});}
+ if(!poseOK){if(poseReason)description=poseReason;tips.push({title:'촬영 상태를 확인해 주세요',text:'정면에서 눈·코·양쪽 어깨와 팔 또는 허리가 선명하게 보이도록 가까이 촬영해 주세요. 측면·가림·작은 인물은 판정을 보류합니다.'});}
  else {
   if(classes.length<2){title='비교할 자세 클래스가 부족해요';description='클래스가 1개인 모델로는 자세를 구별할 수 없습니다.';limitation='좋은 자세와 비교용 자세 등 두 개 이상의 클래스를 학습한 모델이 필요합니다.';}
   else if(!goodClass||!classes.includes(goodClass)){title='좋은 자세 클래스를 직접 선택해 주세요';description='설정에서 실제로 좋은 자세를 학습시킨 클래스를 지정해야 합니다. Class 1이라는 이름만으로 의미를 추측하지 않습니다.';}
@@ -517,6 +544,7 @@ function validPhotoEntry(entry) {
  if(!f||!['good','check','unknown'].includes(f.state)||typeof f.poseOK!=='boolean'||!Array.isArray(f.tips)||f.tips.length>10||!Array.isArray(f.predictions)||f.predictions.length>500)return false;
  if(!['title','description','limitation'].every(k=>typeof f[k]==='string'&&f[k].length<=2000)||!f.tips.every(t=>t&&typeof t.title==='string'&&t.title.length<500&&typeof t.text==='string'&&t.text.length<2000))return false;
  if(!f.predictions.every(p=>p&&typeof p.className==='string'&&p.className.length<1000&&Number.isFinite(p.probability)&&p.probability>=0&&p.probability<=1))return false;
+ if(f.cropApplied!==undefined&&typeof f.cropApplied!=='boolean')return false;
  if(f.view!==undefined&&!['front','side'].includes(f.view))return false;
  if(entry.view!==undefined&&(f.view||'front')!==entry.view)return false;
  const o=f.observations;if(!o)return false;
@@ -525,7 +553,7 @@ function validPhotoEntry(entry) {
  if(f.view==='side'&&(f.state!=='unknown'||f.predictions.length||f.poseOK&&(!['left','right'].includes(o.side)||!['earShoulderAngle','trunkAngle','earShoulderOffset'].every(k=>Number.isFinite(o[k])))))return false;
  return f.observations&&['shoulderAngle','headOffset'].every(k=>f.observations[k]===null||(Number.isFinite(f.observations[k])&&f.observations[k]>=0&&f.observations[k]<=1000));
 }
-window.PhotoCore=Object.freeze({photoObservations,photoSideObservations,photoFeedback,qualifyPhotoPose,validPhotoDate,validPhotoEntry});
+window.PhotoCore=Object.freeze({photoObservations,photoSideObservations,photoUpperBodyCrop,photoPoseReason,photoFeedback,qualifyPhotoPose,validPhotoDate,validPhotoEntry});
 const photoState={db:null,dbPromise:null,entries:[],draft:null,busy:false,loading:false,stream:null,cameraOpening:false,urls:[],detailUrl:null,detailId:null,galleryVersion:0,limit:12,loadError:null};
 function photoNotice(text,type=''){const box=$('photo-notice');box.textContent=text;box.className='notice'+(type?' '+type:'');}
 function photoUi(){
@@ -625,7 +653,12 @@ function feedbackMarkup(feedback,meta={}){
  const frontMeasures=f.poseOK?`<div class="photo-observations"><div class="photo-observation">사진 속 어깨선 기울기<strong>${observations.shoulderAngle==null?'—':observations.shoulderAngle.toFixed(1)+'°'}</strong></div><div class="photo-observation">머리 중심의 좌우 차이<strong>${observations.headOffset==null?'—':Math.round(observations.headOffset*100)+'%'}</strong></div></div><p class="photo-model-note">어깨선 기울기와 코·어깨 중심의 화면상 거리입니다. 머리 좌우 차이는 양쪽 어깨 너비에 대한 비율입니다. 촬영 각도에 영향을 받으며, 척추 각도나 거북목·비대칭의 진단 지표가 아닙니다. 안내 기준(8°, 22%)은 앱의 참고용 규칙이며 임상 기준이 아닙니다.</p>`:'';
  const sideMeasures=f.view==='side'&&f.poseOK?`<div class="photo-observations"><div class="photo-observation">귀–어깨선의 수직 기울기<strong>${observations.earShoulderAngle.toFixed(1)}°</strong></div><div class="photo-observation">상체선의 수직 기울기<strong>${observations.trunkAngle.toFixed(1)}°</strong></div><div class="photo-observation">귀–어깨 수평 거리 비율<strong>${Math.round(observations.earShoulderOffset*100)}%</strong></div></div><p class="photo-model-note">${observations.side==='left'?'왼쪽':'오른쪽'} 귀·어깨·골반 관절점을 사용했습니다. 수직 기울기는 사진의 수직선에 대한 각도이고, 거리 비율은 어깨–골반 선 길이에 대한 화면상 수평 거리입니다. 고개가 앞으로 나왔는지 뒤로 갔는지 또는 척추 상태를 확정하는 값이 아닙니다.</p>`:'';
  const measures=f.view==='side'?sideMeasures:frontMeasures;
- return `${legacy}<div class="status-box ${esc(f.state)}"><strong style="font-size:18px">${esc(f.title)}</strong><p>${esc(f.description)}</p></div>${f.limitation?`<div class="notice warning" style="font-size:11px">${esc(f.limitation)}</div>`:''}${measures}<ul class="photo-feedback-list">${f.tips.map(t=>`<li><strong>${esc(t.title)}</strong>${esc(t.text)}</li>`).join('')}</ul>${f.predictions.length?`<details><summary>사진 한 장의 AI 클래스별 점수 ${probability==null?'':`· 선택한 기준 클래스 ${(probability*100).toFixed(1)}%`}</summary>${f.predictions.map(p=>`<div class="photo-class-row"><span>${esc(p.className)}</span><b>${(p.probability*100).toFixed(1)}%</b></div>`).join('')}</details>`:''}<p class="photo-model-note">사진 한 장의 참고 피드백입니다. 자세 유지 시간이나 일일 좋은 자세 비율에 합산하지 않습니다.${meta.modelUrl?'<br>사용 모델: '+esc(meta.modelUrl):''}</p>`;
+ return `${legacy}${f.cropApplied?'<p class="photo-model-note">전신 사진의 상체를 원본에서 확대해 분석했습니다. 저장 사진의 구도는 유지됩니다.</p>':''}<div class="status-box ${esc(f.state)}"><strong style="font-size:18px">${esc(f.title)}</strong><p>${esc(f.description)}</p></div>${f.limitation?`<div class="notice warning" style="font-size:11px">${esc(f.limitation)}</div>`:''}${measures}<ul class="photo-feedback-list">${f.tips.map(t=>`<li><strong>${esc(t.title)}</strong>${esc(t.text)}</li>`).join('')}</ul>${f.predictions.length?`<details><summary>사진 한 장의 AI 클래스별 점수 ${probability==null?'':`· 선택한 기준 클래스 ${(probability*100).toFixed(1)}%`}</summary>${f.predictions.map(p=>`<div class="photo-class-row"><span>${esc(p.className)}</span><b>${(p.probability*100).toFixed(1)}%</b></div>`).join('')}</details>`:''}<p class="photo-model-note">사진 한 장의 참고 피드백입니다. 자세 유지 시간이나 일일 좋은 자세 비율에 합산하지 않습니다.${meta.modelUrl?'<br>사용 모델: '+esc(meta.modelUrl):''}</p>`;
+}
+function photoInputCanvas(image,mirror,crop=null){
+ const canvas=document.createElement('canvas');canvas.width=400;canvas.height=400;const ctx=canvas.getContext('2d');ctx.fillStyle='#eef2f7';ctx.fillRect(0,0,400,400);
+ const source=crop||{x:0,y:0,width:image.width,height:image.height};const scale=Math.min(400/source.width,400/source.height),w=source.width*scale,h=source.height*scale;
+ ctx.save();if(mirror){ctx.translate(400,0);ctx.scale(-1,1);}ctx.drawImage(image,source.x,source.y,source.width,source.height,(400-w)/2,(400-h)/2,w,h);ctx.restore();return canvas;
 }
 function drawSideMeasurements(canvas,pose,observations){
  if(!observations.side)return;const points=['Ear','Shoulder','Hip'].map(part=>pose.keypoints.find(p=>p.part===observations.side+part)?.position);if(points.some(p=>!p))return;
@@ -635,10 +668,12 @@ async function analyzePhoto(){
  if(!photoState.draft||photoState.busy||photoState.loading)return;
  if(running||starting||stopping||modelBusy){photoNotice('실시간 측정을 종료하고 모델 불러오기가 끝난 뒤 사진을 분석해 주세요.','warning');return;}
  stopPhotoCamera();photoState.busy=true;photoUi();photoNotice('');
- try{if(!model)await loadModel();const draft=photoState.draft;const view=$('photo-view').value==='side'?'side':'front';const image=await createImageBitmap(draft.blob);let canvas;
-  try{canvas=document.createElement('canvas');canvas.width=400;canvas.height=400;const ctx=canvas.getContext('2d');ctx.fillStyle='#eef2f7';ctx.fillRect(0,0,400,400);const scale=Math.min(400/image.width,400/image.height);const w=image.width*scale,h=image.height*scale;ctx.save();if($('photo-mirror').checked){ctx.translate(400,0);ctx.scale(-1,1);}ctx.drawImage(image,(400-w)/2,(400-h)/2,w,h);ctx.restore();}finally{image.close();}
-  const {pose,posenetOutput}=await model.estimatePose(canvas);const predictions=view==='side'?[]:await model.predict(posenetOutput);if(predictions.some(p=>typeof p.className!=='string'||!Number.isFinite(p.probability)))throw new Error('모델이 올바른 분류 점수를 반환하지 않았습니다.');
-  draft.feedback=photoFeedback({view,poseOK:qualifyPhotoPose(pose,400,view),predictions,classes:labels,goodClass:settings.goodClassConfirmed?settings.goodClass:'',threshold:settings.threshold,observations:photoObservations(pose,view)});draft.modelUrl=settings.modelUrl;draft.goodClass=settings.goodClass;draft.threshold=settings.threshold;draft.mirror=$('photo-mirror').checked;draft.view=view;draft.saved=false;
+ try{if(!model)await loadModel();const draft=photoState.draft;const view=$('photo-view').value==='side'?'side':'front',mirror=$('photo-mirror').checked;const image=await createImageBitmap(draft.blob);let canvas,estimate,crop=null;
+  try{canvas=photoInputCanvas(image,mirror);estimate=await model.estimatePose(canvas);
+   if(view==='front'){crop=photoUpperBodyCrop(estimate.pose,image.width,image.height,400,mirror);if(crop){canvas=photoInputCanvas(image,mirror,crop);estimate=await model.estimatePose(canvas);}}
+  }finally{image.close();}
+  const {pose,posenetOutput}=estimate;const predictions=view==='side'?[]:await model.predict(posenetOutput);if(predictions.some(p=>typeof p.className!=='string'||!Number.isFinite(p.probability)))throw new Error('모델이 올바른 분류 점수를 반환하지 않았습니다.');
+  draft.feedback=photoFeedback({view,poseOK:qualifyPhotoPose(pose,400,view),poseReason:view==='front'?photoPoseReason(pose):'',predictions,classes:labels,goodClass:settings.goodClassConfirmed?settings.goodClass:'',threshold:settings.threshold,observations:photoObservations(pose,view)});draft.feedback.cropApplied=!!crop;draft.modelUrl=settings.modelUrl;draft.goodClass=settings.goodClass;draft.threshold=settings.threshold;draft.mirror=mirror;draft.view=view;draft.saved=false;
   $('photo-feedback').innerHTML=feedbackMarkup(draft.feedback,draft);if(pose){const ctx=canvas.getContext('2d');tmPose.drawKeypoints(pose.keypoints,.45,ctx);tmPose.drawSkeleton(pose.keypoints,.45,ctx);if(view==='side'&&draft.feedback.poseOK)drawSideMeasurements(canvas,pose,draft.feedback.observations);canvas.className='photo-analysis-canvas';canvas.setAttribute('aria-label','사진에서 인식한 관절점');$('photo-feedback').append(canvas);}
   toast('사진 피드백을 준비했습니다. 날짜와 메모를 확인한 뒤 저장해 주세요.');
  }catch(error){photoNotice('사진 분석 실패: '+error.message,'error');}
